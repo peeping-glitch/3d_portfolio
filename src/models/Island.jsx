@@ -13,9 +13,65 @@ import { a } from '@react-spring/three'
 
 import islandScene from '../assets/3d/island.glb';
 
-const Island = (props) => {
-  const islandRef = useRef();  
-  const { nodes, materials } = useGLTF(islandScene)
+const Island = ({ isRotating, setIsRotating, ...props}) => {
+  const islandRef = useRef();
+  
+  const { gl, viewport } = useThree();
+  const { nodes, materials } = useGLTF(islandScene);
+
+  const lastX = useRef(0);
+  const rotation = useRef(0);
+  const dampingFactor = 0.95;
+
+  const handlePointerDown = (e) => {
+    e.stopPorgration();
+    e.preventDefault();
+
+    const clientX = e.touches
+      ? e.touches[0].clientX
+      : e.clientX;
+      
+    lastX.current = clientX;
+  }
+
+  const handlePointerup = (e) => {
+    e.stopPorgration();
+    e.preventDefault();
+    setIsRotating(false);
+
+    const clientX = e.touches
+      ? e.touches[0].clientX
+      : e.clientX;
+      
+    const delta = (clientX - lastX.current) / viewport.width;
+
+    islandRef.current.rotaion.y += delta * 0.01 * Math.PI;
+
+    lastX.cuttent = clientX;
+  }
+
+  const handlePointerMove = (e) => {
+    e.stopPorgration();
+    e.preventDefault();
+
+    if(isRotating) {
+      handlePointerup(e);
+    }
+  }
+
+  useEffect(() => {
+    document  .addEventListener('pointerdown', handlePointerDown);
+    document  .addEventListener('pointerup', handlePointerup);
+    document  .addEventListener('pointermove', handlePointerMove);
+
+    return () => {
+      document  .removeEventListener('pointerdown', handlePointerDown);
+      document  .removeEventListener('pointerup', handlePointerup);
+      document  .removeEventListener('pointermove', handlePointerMove);
+    }
+  }, [gl, handlePointerDown, handlePointerup, handlePointerMove]);
+
+
   return (
     <a.group ref={islandRef} {...props}>
       <mesh
